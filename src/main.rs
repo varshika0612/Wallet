@@ -1,18 +1,22 @@
+mod wallet;
+use wallet::{Wallet, hash_password};
 use clap::{Parser, Subcommand};
+use std::fs;
+use std::io::{self, Write};
 
 #[derive(Parser)]
 #[command(name = "wallet-cli")]
 #[command(about = "A wallet CLI with login and wallet actions")]
-struct Cli {
-    #[command(subcommand)]
+struct Cli { 
+    #[command(subcommand)]      
     command: TopLevelCommand,
 }
 
 #[derive(Subcommand)]
 enum TopLevelCommand {
-    /// Account management: login or create
+    #[command(subcommand)]
     Account(AccountCommand),
-    /// Wallet actions: send, receive
+    #[command(subcommand)]
     Wallet(WalletCommand),
 }
 
@@ -22,6 +26,8 @@ enum AccountCommand {
     CreateAccount,
     /// Login to an existing account
     Login { username: String },
+    /// Logout current session
+    Logout,
 }
 
 #[derive(Subcommand)]
@@ -30,6 +36,27 @@ enum WalletCommand {
     Send { to: String, amount: u64 },
     /// Receive coins
     Receive { from: String, amount: u64 },
+    /// Check balance
+    Balance,
+}
+
+fn prompt(msg: &str) -> String {
+    print!("{}", msg);
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    input.trim().to_string()
+}
+
+// Session management: store the username of the logged-in user in a temp file
+fn set_logged_in_user(username: &str) {
+    fs::write("session.txt", username).unwrap();
+}
+fn get_logged_in_user() -> Option<String> {
+    fs::read_to_string("session.txt").ok().map(|s| s.trim().to_string())
+}
+fn logout_user() {
+    let _ = fs::remove_file("session.txt");
 }
 
 fn main() {
@@ -38,23 +65,113 @@ fn main() {
     match &cli.command {
         TopLevelCommand::Account(account_cmd) => match account_cmd {
             AccountCommand::CreateAccount => {
-                println!("Creating account...");
-                // Your code here
+                let username = prompt("Enter username for new account: ");
+                if Wallet::load(&username).is_some() {
+                    println!("Account '{}' already exists.", username);
+                } else {
+                    let password = prompt("Enter password: ");
+                    let wallet = Wallet::create(&username, &password);
+                    set_logged_in_user(&username);
+                    println!("Account created for '{}' with balance {}. You are now logged in.", wallet.username, wallet.balance);
+                }
             }
             AccountCommand::Login { username } => {
-                println!("Logging in as {}", username);
-                // Your code here
+                if let Some(wallet) = Wallet::load(username) {
+                    let password = prompt("Enter password: ");
+                    if wallet.verify_password(&password) {
+                        set_logged_in_user(username);
+                        println!("Logged in as '{}'.", wallet.username);
+                    } else {
+                        println!("Incorrect password.");
+                    }
+                } else {
+                    println!("No account found for username '{}'.", username);
+                }
+            }
+            AccountCommand::Logout => {
+                logout_user();
+                println!("Logged out.");
             }
         },
-        TopLevelCommand::Wallet(wallet_cmd) => match wallet_cmd {
-            WalletCommand::Send { to, amount } => {
-                println!("Sending {} coins to {}", amount, to);
-                // Your code here
+        TopLevelCommand::Wallet(wallet_cmd) => {
+            let username = match get_logged_in_user() {
+                Some(u) => u,
+                None => {
+                    println!("You must be logged in to use wallet commands.");
+                    return;
+                }
+            };
+            match wallet_cmd {
+                WalletCommand::Send { to, amount } => {
+                    let mut sender_wallet = match Wallet::load(&username) {
+                        Some(w) => w,
+                        None => {
+                            println!("Sender account not found.");
+                            return;
+                        }
+                    };
+
+                    if sender_wallet.balance < *amount {
+                        println!("Insufficient balance.");
+                        return;
+                    }
+
+                    let mut receiver_wallet = match Wallet::load(to) {
+                        Some(w) => w,
+                        None => {
+                            println!("Receiver account '{}' not found.", to);
+                            return;
+                        }
+                    };
+
+                    sender_wallet.balance -= amount;
+                    receiver_wallet.balance += amount;
+
+                    sender_wallet.save();
+                    receiver_wallet.save();
+
+                    println!("Sent {} coins from '{}' to '{}'.", amount, username, to);
+                    println!("Your new balance: {}", sender_wallet.balance);
+                }
+                WalletCommand::Receive { from, amount } => {
+                    let mut receiver_wallet = match Wallet::load(&username) {
+                        Some(w) => w,
+                        None => {
+                            println!("Receiver account not found.");
+                            return;
+                        }
+                    };
+
+                    let mut sender_wallet = match Wallet::load(from) {
+                        Some(w) => w,
+                        None => {
+                            println!("Sender account '{}' not found.", from);
+                            return;
+                        }
+                    };
+
+                    if sender_wallet.balance < *amount {
+                        println!("Sender '{}' has insufficient balance.", from);
+                        return;
+                    }
+
+                    sender_wallet.balance -= amount;
+                    receiver_wallet.balance += amount;
+
+                    sender_wallet.save();
+                    receiver_wallet.save();
+
+                    println!("Received {} coins from '{}' to '{}'.", amount, from, username);
+                    println!("Your new balance: {}", receiver_wallet.balance);
+                }
+                WalletCommand::Balance => {
+                    if let Some(wallet) = Wallet::load(&username) {
+                        println!("'{}' balance: {}", wallet.username, wallet.balance);
+                    } else {
+                        println!("No account found for username '{}'.", username);
+                    }
+                }
             }
-            WalletCommand::Receive { from, amount } => {
-                println!("Receiving {} coins from {}", amount, from);
-                // Your code here
-            }
-        },
+        }
     }
 }
