@@ -1,9 +1,11 @@
 mod wallet;
+mod blockchain;
 use wallet::{Wallet, hash_password};
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
-
+use blockchain::BlockChain;
+use rpassword;
 #[derive(Parser)]
 #[command(name = "wallet-cli")]
 #[command(about = "A wallet CLI with login and wallet actions")]
@@ -38,7 +40,8 @@ enum WalletCommand {
     Receive { from: String, amount: u64 },
     /// Check balance
     Balance,
-    history,
+    /// Show transaction history
+    History, // <-- Change from `history` to `History`
 }
 
 fn prompt(msg: &str) -> String {
@@ -59,9 +62,19 @@ fn get_logged_in_user() -> Option<String> {
 fn logout_user() {
     let _ = fs::remove_file("session.txt");
 }
-
+fn update_blockchain(blockchain: &BlockChain,data: &str) {
+    let mut blockchain = blockchain.clone();
+    blockchain.add_block(data);
+    if !blockchain.is_valid() {
+        println!("Blockchain is invalid after adding new block.");
+        return;
+    }
+    println!("New block added to the blockchain with data: {}", data);
+    blockchain.save();
+}
 fn main() {
     let cli = Cli::parse();
+    let mut blockchain =BlockChain::load().unwrap_or_else(BlockChain::new);
 
     match &cli.command {
         TopLevelCommand::Account(account_cmd) => match account_cmd {
@@ -132,6 +145,7 @@ fn main() {
                     receiver_wallet.save();
                    sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, to));
                     receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, username));
+                    update_blockchain(&blockchain, &format!("Sent {} coins from '{}' to '{}'", amount, username, to));
                     println!("Sent {} coins from '{}' to '{}'.", amount, username, to);
                     println!("Your new balance: {}", sender_wallet.balance);
                 }
@@ -164,6 +178,7 @@ fn main() {
                     receiver_wallet.save();
                     sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, username));
                     receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, from));
+                     update_blockchain(&blockchain, &format!("Sent {} coins from '{}' to '{}'", amount,from, username));
                     println!("Received {} coins from '{}' to '{}'.", amount, from, username);
                     println!("Your new balance: {}", receiver_wallet.balance);
                 }
@@ -174,7 +189,7 @@ fn main() {
                         println!("No account found for username '{}'.", username);
                     }
                 }
-                WalletCommand::history => {
+                WalletCommand::History => {
                     if let Some(wallet) = Wallet::load(&username) {
                         if wallet.transactions.is_empty() {
                             println!("No transaction history found for '{}'.", wallet.username);
