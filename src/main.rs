@@ -38,6 +38,7 @@ enum WalletCommand {
     Receive { from: String, amount: u64 },
     /// Check balance
     Balance,
+    history,
 }
 
 fn prompt(msg: &str) -> String {
@@ -69,7 +70,7 @@ fn main() {
                 if Wallet::load(&username).is_some() {
                     println!("Account '{}' already exists.", username);
                 } else {
-                    let password = prompt("Enter password: ");
+                    let password = rpassword::prompt_password("Enter password: ").unwrap();
                     let wallet = Wallet::create(&username, &password);
                     set_logged_in_user(&username);
                     println!("Account created for '{}' with balance {}. You are now logged in.", wallet.username, wallet.balance);
@@ -77,7 +78,7 @@ fn main() {
             }
             AccountCommand::Login { username } => {
                 if let Some(wallet) = Wallet::load(username) {
-                    let password = prompt("Enter password: ");
+                    let password = rpassword::prompt_password("Enter password: ").unwrap();
                     if wallet.verify_password(&password) {
                         set_logged_in_user(username);
                         println!("Logged in as '{}'.", wallet.username);
@@ -129,7 +130,8 @@ fn main() {
 
                     sender_wallet.save();
                     receiver_wallet.save();
-
+                   sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, to));
+                    receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, username));
                     println!("Sent {} coins from '{}' to '{}'.", amount, username, to);
                     println!("Your new balance: {}", sender_wallet.balance);
                 }
@@ -160,13 +162,28 @@ fn main() {
 
                     sender_wallet.save();
                     receiver_wallet.save();
-
+                    sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, username));
+                    receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, from));
                     println!("Received {} coins from '{}' to '{}'.", amount, from, username);
                     println!("Your new balance: {}", receiver_wallet.balance);
                 }
                 WalletCommand::Balance => {
                     if let Some(wallet) = Wallet::load(&username) {
                         println!("'{}' balance: {}", wallet.username, wallet.balance);
+                    } else {
+                        println!("No account found for username '{}'.", username);
+                    }
+                }
+                WalletCommand::history => {
+                    if let Some(wallet) = Wallet::load(&username) {
+                        if wallet.transactions.is_empty() {
+                            println!("No transaction history found for '{}'.", wallet.username);
+                        } else {
+                            println!("Transaction history for '{}':", wallet.username);
+                            for transaction in &wallet.transactions {
+                                println!("- {}", transaction);
+                            }
+                        }
                     } else {
                         println!("No account found for username '{}'.", username);
                     }

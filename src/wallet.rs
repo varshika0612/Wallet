@@ -7,6 +7,7 @@ pub struct Wallet {
     pub username: String,
     pub password_hash: String,
     pub balance: u64,
+    pub transactions: Vec<String>, 
 }
 
 impl Wallet {
@@ -19,6 +20,7 @@ impl Wallet {
             username: username.to_string(),
             password_hash: hash_password(password),
             balance: 100,
+            transactions: Vec::new(), 
         };
         let filename = Wallet::filename(username);
         let data = serde_json::to_string_pretty(&wallet).unwrap();
