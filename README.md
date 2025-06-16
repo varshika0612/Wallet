@@ -26,8 +26,9 @@ cargo run -- [COMMAND]
 - `createaccount`  
   Register a new user account.
 
-- `login <username>`  
-  Log in to an existing account.
+- `login`  
+  Log in to an existing account.  
+  _(You will be prompted to enter your username and password interactively.)_
 
 - `logout`  
   Log out of the current session.
@@ -76,4 +77,4 @@ MIT
 
 ---
 
-*This project is for educational purposes and not intended for
+*This project is for educational purposes and
