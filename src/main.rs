@@ -1,16 +1,20 @@
 mod wallet;
 mod blockchain;
-use wallet::{Wallet, hash_password};
+
+use wallet::{Wallet, hash_password, TransactionRecord};
+use blockchain::BlockChain;
+
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::io::{self, Write};
-use blockchain::BlockChain;
+use chrono::Utc;
 use rpassword;
+
 #[derive(Parser)]
 #[command(name = "wallet-cli")]
 #[command(about = "A wallet CLI with login and wallet actions")]
-struct Cli { 
-    #[command(subcommand)]      
+struct Cli {
+    #[command(subcommand)]
     command: TopLevelCommand,
 }
 
@@ -41,7 +45,7 @@ enum WalletCommand {
     /// Check balance
     Balance,
     /// Show transaction history
-    History, // <-- Change from `history` to `History`
+    History,
 }
 
 fn prompt(msg: &str) -> String {
@@ -52,17 +56,19 @@ fn prompt(msg: &str) -> String {
     input.trim().to_string()
 }
 
-// Session management: store the username of the logged-in user in a temp file
 fn set_logged_in_user(username: &str) {
     fs::write("session.txt", username).unwrap();
 }
+
 fn get_logged_in_user() -> Option<String> {
     fs::read_to_string("session.txt").ok().map(|s| s.trim().to_string())
 }
+
 fn logout_user() {
     let _ = fs::remove_file("session.txt");
 }
-fn update_blockchain(blockchain: &BlockChain,data: &str) {
+
+fn update_blockchain(blockchain: &BlockChain, data: &str) {
     let mut blockchain = blockchain.clone();
     blockchain.add_block(data);
     if !blockchain.is_valid() {
@@ -72,9 +78,10 @@ fn update_blockchain(blockchain: &BlockChain,data: &str) {
     println!("New block added to the blockchain with data: {}", data);
     blockchain.save();
 }
+
 fn main() {
     let cli = Cli::parse();
-    let mut blockchain =BlockChain::load().unwrap_or_else(BlockChain::new);
+    let mut blockchain = BlockChain::load().unwrap_or_else(BlockChain::new);
 
     match &cli.command {
         TopLevelCommand::Account(account_cmd) => match account_cmd {
@@ -115,6 +122,7 @@ fn main() {
                     return;
                 }
             };
+
             match wallet_cmd {
                 WalletCommand::Send { to, amount } => {
                     let mut sender_wallet = match Wallet::load(&username) {
@@ -138,17 +146,34 @@ fn main() {
                         }
                     };
 
+                    let note = prompt("Add a note (optional): ");
+                    let note = if note.is_empty() { None } else { Some(note) };
+
                     sender_wallet.balance -= amount;
                     receiver_wallet.balance += amount;
 
+                    let timestamp = Utc::now().timestamp() as u64;
+
+                    sender_wallet.transactions.push(TransactionRecord {
+                        description: format!("Sent {} coins to {}", amount, to),
+                        note: note.clone(),
+                        timestamp,
+                    });
+
+                    receiver_wallet.transactions.push(TransactionRecord {
+                        description: format!("Received {} coins from {}", amount, username),
+                        note,
+                        timestamp,
+                    });
+
                     sender_wallet.save();
                     receiver_wallet.save();
-                   sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, to));
-                    receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, username));
+
                     update_blockchain(&blockchain, &format!("Sent {} coins from '{}' to '{}'", amount, username, to));
                     println!("Sent {} coins from '{}' to '{}'.", amount, username, to);
                     println!("Your new balance: {}", sender_wallet.balance);
                 }
+
                 WalletCommand::Receive { from, amount } => {
                     let mut receiver_wallet = match Wallet::load(&username) {
                         Some(w) => w,
@@ -176,12 +201,26 @@ fn main() {
 
                     sender_wallet.save();
                     receiver_wallet.save();
-                    sender_wallet.transactions.push(format!("Sent {} coins to {}", amount, username));
-                    receiver_wallet.transactions.push(format!("Received {} coins from {}", amount, from));
-                     update_blockchain(&blockchain, &format!("Sent {} coins from '{}' to '{}'", amount,from, username));
+
+                    let timestamp = Utc::now().timestamp() as u64;
+
+                    sender_wallet.transactions.push(TransactionRecord {
+                        description: format!("Sent {} coins to {}", amount, username),
+                        note: None,
+                        timestamp,
+                    });
+
+                    receiver_wallet.transactions.push(TransactionRecord {
+                        description: format!("Received {} coins from {}", amount, from),
+                        note: None,
+                        timestamp,
+                    });
+
+                    update_blockchain(&blockchain, &format!("Sent {} coins from '{}' to '{}'", amount, from, username));
                     println!("Received {} coins from '{}' to '{}'.", amount, from, username);
                     println!("Your new balance: {}", receiver_wallet.balance);
                 }
+
                 WalletCommand::Balance => {
                     if let Some(wallet) = Wallet::load(&username) {
                         println!("'{}' balance: {}", wallet.username, wallet.balance);
@@ -189,6 +228,7 @@ fn main() {
                         println!("No account found for username '{}'.", username);
                     }
                 }
+
                 WalletCommand::History => {
                     if let Some(wallet) = Wallet::load(&username) {
                         if wallet.transactions.is_empty() {
@@ -196,7 +236,10 @@ fn main() {
                         } else {
                             println!("Transaction history for '{}':", wallet.username);
                             for transaction in &wallet.transactions {
-                                println!("- {}", transaction);
+                                let note_part = transaction.note.as_ref()
+                                    .map(|n| format!(" (Note: {})", n))
+                                    .unwrap_or_default();
+                                println!("- {}{}", transaction.description, note_part);
                             }
                         }
                     } else {
