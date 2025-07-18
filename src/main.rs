@@ -46,6 +46,8 @@ enum WalletCommand {
     Balance,
     /// Show transaction history
     History,
+    /// Generate QR code for wallet address
+    QrCode,
 }
 
 fn prompt(msg: &str) -> String {
@@ -246,7 +248,46 @@ fn main() {
                         println!("No account found for username '{}'.", username);
                     }
                 }
+
+                WalletCommand::QrCode => {
+                    if let Some(wallet) = Wallet::load(&username) {
+                        match wallet.generate_qr() {
+                            Ok(()) => {
+                                println!("QR code generated successfully!");
+                            }
+                            Err(e) => {
+                                println!("Error generating QR code: {}", e);
+                            }
+                        }
+                    } else {
+                        println!("No account found for username '{}'.", username);
+                    }
+                }
             }
         }
+    }
+}
+
+// Add this to your wallet.rs file:
+impl Wallet {
+    // ... existing functions ...
+    pub fn get_address(&self) -> String {
+        format!("wallet_{}", self.username)
+    }
+    
+    pub fn generate_qr(&self) -> Result<(), Box<dyn std::error::Error>> {
+        use qrcode::QrCode;
+        use image::Luma;
+        
+        let address = self.get_address();
+        let code = QrCode::new(&address)?;
+        let image = code.render::<Luma<u8>>().build();
+        
+        let filename = format!("{}_address_qr.png", self.username);
+        image.save(&filename)?;
+        
+        println!("QR code saved as: {}", filename);
+        println!("Your wallet address: {}", address);
+        Ok(())
     }
 }
