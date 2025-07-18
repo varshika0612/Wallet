@@ -48,31 +48,18 @@ impl Wallet {
     }
     
     pub fn verify_password(&self, password: &str) -> bool {
-        // For backward compatibility, check if it's an old SHA256 hash
-        if self.password_hash.len() == 64 && self.password_hash.chars().all(|c| c.is_ascii_hexdigit()) {
-            // Old SHA256 hash format - use old verification method
-            let mut hasher = Sha256::new();
-            hasher.update(password.as_bytes());
-            let sha256_hash = format!("{:x}", hasher.finalize());
-            return self.password_hash == sha256_hash;
-        }
+        use argon2::{Argon2, PasswordVerifier};
+        use argon2::password_hash::PasswordHash;
         
-        // New Argon2 hash format
-        use argon2::{Argon2, PasswordHash, PasswordVerifier};
-        
-        match PasswordHash::new(&self.password_hash) {
-            Ok(parsed_hash) => {
-                let argon2 = Argon2::default();
-                argon2.verify_password(password.as_bytes(), &parsed_hash).is_ok()
-            }
-            Err(_) => {
-                // Fallback to SHA256 if parsing fails
-                let mut hasher = Sha256::new();
-                hasher.update(password.as_bytes());
-                let sha256_hash = format!("{:x}", hasher.finalize());
-                self.password_hash == sha256_hash
+        // Try Argon2 verification first
+        if let Ok(parsed_hash) = PasswordHash::new(&self.password_hash) {
+            if Argon2::default().verify_password(password.as_bytes(), &parsed_hash).is_ok() {
+                return true;
             }
         }
+        
+        // Fallback to SHA256 for old passwords
+        self.password_hash == hash_password(password)
     }
   
     pub fn get_address(&self) -> String {
