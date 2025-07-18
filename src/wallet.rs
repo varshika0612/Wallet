@@ -7,8 +7,16 @@ pub struct Wallet {
     pub username: String,
     pub password_hash: String,
     pub balance: u64,
-    pub transactions: Vec<String>, 
+    pub transactions: Vec<TransactionRecord>, // Changed from Vec<String>
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TransactionRecord {
+    pub description: String,
+    pub note: Option<String>, // NEW: User can add notes
+    pub timestamp: u64,       // NEW: When transaction happened
+}
+
 
 impl Wallet {
     pub fn filename(username: &str) -> String {
@@ -16,17 +24,18 @@ impl Wallet {
     }
 
     pub fn create(username: &str, password: &str) -> Self {
-        let wallet = Wallet {
-            username: username.to_string(),
-            password_hash: hash_password(password),
-            balance: 100,
-            transactions: Vec::new(), 
-        };
-        let filename = Wallet::filename(username);
-        let data = serde_json::to_string_pretty(&wallet).unwrap();
-        fs::write(filename, data).unwrap();
-        wallet
-    }
+    let wallet = Wallet {
+        username: username.to_string(),
+        password_hash: hash_password(password),
+        balance: 100,
+        transactions: Vec::new(),
+    };
+    let filename = Wallet::filename(username);
+    let data = serde_json::to_string_pretty(&wallet).unwrap();
+    fs::write(filename, data).unwrap();
+    wallet
+}
+
 
     pub fn load(username: &str) -> Option<Self> {
         let filename = Wallet::filename(username);
