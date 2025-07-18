@@ -47,7 +47,7 @@ enum WalletCommand {
     /// Show transaction history
     History,
     /// Generate QR code for wallet address
-    QrCode,
+    QrCode, // NEW COMMAND
 }
 
 fn prompt(msg: &str) -> String {
@@ -252,12 +252,8 @@ fn main() {
                 WalletCommand::QrCode => {
                     if let Some(wallet) = Wallet::load(&username) {
                         match wallet.generate_qr() {
-                            Ok(()) => {
-                                println!("QR code generated successfully!");
-                            }
-                            Err(e) => {
-                                println!("Error generating QR code: {}", e);
-                            }
+                            Ok(_) => println!("QR code generated successfully!"),
+                            Err(e) => println!("Error generating QR code: {}", e),
                         }
                     } else {
                         println!("No account found for username '{}'.", username);
