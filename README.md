@@ -1,80 +1,99 @@
-# Wallet CLI
+Wallet CLI Application
+A simple, secure, and extensible command-line cryptocurrency wallet built in Rust.
+Implements user account management, on-disk JSON wallet storage, a basic proof-of-work blockchain, and secure password hashing with Argon2.
 
-A simple command-line wallet application in Rust with user registration, login, wallet management, and a basic blockchain for transaction history.
+Features
+Account creation, login, and logout
 
-## Features
+Balance inquiry, send, and receive commands
 
-- **User Registration & Login:** Secure account creation and authentication with password hashing (Argon2).
-- **Wallet Management:** Check balance, send and receive coins, and view transaction history.
-- **Blockchain:** All transactions are recorded on a simple blockchain for transparency.
-- **Session Management:** Users stay logged in until they logout.
-- **Secure Password Input:** Passwords are never shown on the screen.
+Immutable blockchain ledger with SHA-256 proof-of-work
 
-## Usage
+Secure password storage using Argon2id with random salts
 
-### Build and Run
+JSON-based on-disk persistence per user
 
-```sh
-cargo build
-cargo run -- [COMMAND]
-```
+Transaction history tracking
 
-### Commands
+Plug-and-play extensibility for QR code generation, BIP-39 mnemonics, notes, and more
 
-#### Account Management
+Getting Started
+Prerequisites
+Rust (stable toolchain)
 
-- `createaccount`  
-  Register a new user account.
+cargo package manager
 
-- `login`  
-  Log in to an existing account.  
-  _(You will be prompted to enter your username and password interactively.)_
+Git
 
-- `logout`  
-  Log out of the current session.
+Clone and Build
+bash
+git clone https://github.com/varshika0612/Wallet.git
+cd Wallet
+cargo build --release
+A release binary will be available at target/release/wallet.
 
-#### Wallet Operations
+Usage
+Invoke the wallet CLI with a subcommand and appropriate flags:
 
-- `send --to <username> --amount <amount>`  
-  Send coins to another user.
+bash
+./target/release/wallet <COMMAND> [OPTIONS]
+Common Commands
+Command	Description
+createaccount --username U	Create a new wallet user
+login --username U	Log in to an existing wallet user
+logout	Log out of the current session
+balance	Show current balance
+send --to R --amount N	Send N coins to recipient R
+receive --from S --amount N	Receive N coins from sender S
+history	Display transaction history
+Examples
+bash
+# Create and log in
+./wallet createaccount --username alice
+./wallet login --username alice
 
-- `receive --from <username> --amount <amount>`  
-  Receive coins from another user.
+# Check balance and send coins
+./wallet balance
+./wallet send --to bob --amount 50
 
-- `balance`  
-  Show your current wallet balance.
+# View history and log out
+./wallet history
+./wallet logout
+Configuration & Extensibility
+QR Code Generation
+(Optional) Enable QR code support by adding dependencies in Cargo.toml:
 
-- `history`  
-  Show your transaction history.
+text
+qrcode = "0.13"
+image  = "0.25"
+Add the QrCode subcommand to main.rs and call generate_qr() on your wallet instance.
 
-## File Structure
+Transaction Notes
+(Optional) Extend the TransactionRecord struct in wallet.rs with a note field and update the send command to prompt for an optional note.
 
-- `src/main.rs` — CLI logic and command handling
-- `src/wallet.rs` — Wallet struct, password hashing, and wallet file management
-- `src/blockchain.rs` — Blockchain struct and logic
-- `src/blockchain/block.rs` — Block struct and logic
+Mnemonic Backups (BIP-39)
+(Optional) Integrate the bip39 crate for 12-word mnemonic generation and storage to support wallet recovery.
 
-## Data Storage
+Security
+Argon2id password hashing with per-user random salts
 
-- User credentials are stored in `users.txt`
-- Wallets are stored as JSON files per user
-- Blockchain is stored in `blockchain.json`
-- Session info is stored in `session.txt`
+SHA-256 hashing for block integrity
 
-## Security
+Proof-of-work consensus to prevent tampering
 
-- Passwords are hashed using Argon2 and never stored in plain text.
-- Password input is hidden using the `rpassword` crate.
+Offline JSON storage for data isolation
 
-## Requirements
+For additional hardening, consider adding CI-based cargo audit, clippy with -D warnings, and unit/integration tests.
 
-- Rust (edition 2021)
-- [See `Cargo.toml` for dependencies](Cargo.toml)
+Contributing
+Contributions are welcome! Please fork the repository and open a pull request with:
 
-## License
+Descriptive branch name (e.g., feature/qr-code)
 
-MIT
+Unit tests covering new functionality
 
----
+Updated documentation in README.md
 
-*This project is for educational purposes and
+License
+This project is dual-licensed under MIT OR Apache-2.0. See the LICENSE file for details.
+
