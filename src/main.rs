@@ -48,6 +48,8 @@ enum WalletCommand {
     History,
     /// Generate QR code for wallet address
     QrCode, // NEW COMMAND
+    /// Show wallet summary
+    Summary, // NEW COMMAND
 }
 
 fn prompt(msg: &str) -> String {
@@ -254,6 +256,22 @@ fn main() {
                         match wallet.generate_qr() {
                             Ok(_) => println!("QR code generated successfully!"),
                             Err(e) => println!("Error generating QR code: {}", e),
+                        }
+                    } else {
+                        println!("No account found for username '{}'.", username);
+                    }
+                }
+
+                WalletCommand::Summary => {
+                    if let Some(wallet) = Wallet::load(&username) {
+                        println!("=== Wallet Summary for '{}' ===", wallet.username);
+                        println!("Address: {}", wallet.get_address());
+                        println!("Balance: {} coins", wallet.balance);
+                        println!("Total transactions: {}", wallet.transactions.len());
+                        if !wallet.transactions.is_empty() {
+                            if let Some(last_tx) = wallet.transactions.last() {
+                                println!("Last transaction: {}", last_tx.description);
+                            }
                         }
                     } else {
                         println!("No account found for username '{}'.", username);
