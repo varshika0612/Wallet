@@ -52,6 +52,26 @@ impl Wallet {
     pub fn verify_password(&self, password: &str) -> bool {
         self.password_hash == hash_password(password)
     }
+  
+    pub fn get_address(&self) -> String {
+        format!("wallet_{}", self.username)
+    }
+
+    pub fn generate_qr(&self) -> Result<(), Box<dyn std::error::Error>> {
+        use qrcode::QrCode;
+        use image::Luma;
+        
+        let address = self.get_address();
+        let code = QrCode::new(&address)?;
+        let image = code.render::<Luma<u8>>().build();
+        
+        let filename = format!("{}_address_qr.png", self.username);
+        image.save(&filename)?;
+        
+        println!("QR code saved as: {}", filename);
+        println!("Your wallet address: {}", address);
+        Ok(())
+    }
 }
 
 pub fn hash_password(password: &str) -> String {
