@@ -1,59 +1,71 @@
-Wallet CLI Application
-A simple, secure, and extensible command-line cryptocurrency wallet built in Rust. Implements user account management, on-disk JSON wallet storage, a basic proof-of-work blockchain, and secure password hashing with Argon2.
+# 🪙 Wallet CLI Application
 
-Features
-Account creation, login, and logout
+A simple, secure, and extensible command-line cryptocurrency wallet built in Rust.  
+Implements user account management, secure on-disk storage, a basic blockchain with proof-of-work, and password hashing using Argon2.
 
-Balance inquiry, send, and receive commands
+---
 
-Immutable blockchain ledger with SHA-256 proof-of-work
+## 🚀 Features
 
-Secure password storage using Argon2id with random salts
+- ✅ **Account creation, login, and logout**
+- 💰 **Balance inquiry, send, and receive commands**
+- 🔒 **Secure password storage** using **Argon2id** with random salts
+- ⛓️ **Immutable blockchain ledger** with **SHA-256 proof-of-work**
+- 📄 **Transaction history tracking**
+- 💾 **JSON-based on-disk persistence per user**
+- 🧩 **Plug-and-play extensibility** for:
+  - QR Code generation
+  - BIP-39 mnemonic phrase backups
+  - Transaction notes
 
-JSON-based on-disk persistence per user
+---
 
-Transaction history tracking
+## 📦 Getting Started
 
-Plug-and-play extensibility for:
+### 🔧 Prerequisites
 
-QR code generation
+- [Rust (stable)](https://rust-lang.org/)
+- Cargo package manager (comes with Rust)
+- Git
 
-BIP-39 mnemonics
+### 🛠️ Clone and Build
 
-Transaction notes and more
-
-Getting Started
-Prerequisites
-Rust (stable toolchain)
-
-cargo package manager
-
-Git
-
-Clone and Build
-bash
+```bash
 git clone https://github.com/varshika0612/Wallet.git
 cd Wallet
 cargo build --release
-A release binary will be available at target/release/wallet.
+```
 
-Usage
-Invoke the wallet CLI with a subcommand and appropriate flags:
+> The release binary will be available at `target/release/wallet`.
 
-bash
-./target/release/wallet [OPTIONS]
-Common Commands
-Command	Description
-createaccount	Create a new wallet user
-login	Log in to an existing wallet user
-logout	Log out of the current session
-balance	Show current balance
-send	Send N coins to recipient R
-receive	Receive N coins from sender S
-history	Display transaction history
-Example Usage
-bash
-# Create and log in
+---
+
+## 🧪 Usage
+
+Invoke the wallet CLI with subcommands:
+
+```bash
+./target/release/wallet [COMMAND] [OPTIONS]
+```
+
+### 📋 Common Commands
+
+| Command        | Description                         |
+|----------------|-------------------------------------|
+| `createaccount`| Create a new wallet user            |
+| `login`        | Log in to an existing user account  |
+| `logout`       | Log out of the current session      |
+| `balance`      | Show the current wallet balance     |
+| `send`         | Send N coins to recipient R         |
+| `receive`      | Receive N coins from sender S       |
+| `history`      | Display the user's transaction log  |
+
+---
+
+### 🧾 Example Usage
+
+```bash
+# Create a new account and log in
 ./wallet createaccount --username alice
 ./wallet login --username alice
 
@@ -61,49 +73,73 @@ bash
 ./wallet balance
 ./wallet send --to bob --amount 50
 
-# View history and log out
+# View history and logout
 ./wallet history
 ./wallet logout
-Configuration & Extensibility
-QR Code Generation (Optional)
-Enable QR code support by adding dependencies in Cargo.toml:
+```
 
-text
+---
+
+## ⚙️ Configuration & Extensibility
+
+### 📷 QR Code Support (Optional)
+
+Add the following to your `Cargo.toml`:
+
+```toml
 qrcode = "0.13"
 image = "0.25"
-Then add the QrCode subcommand to main.rs and call generate_qr() on your wallet instance.
+```
 
-Transaction Notes (Optional)
-Extend the TransactionRecord struct in wallet.rs with a note field. Update the send command to prompt for an optional note.
+Add a `QrCode` subcommand and call `generate_qr()` on your wallet instance for address sharing or payment requests.
 
-Mnemonic Backups (BIP-39) (Optional)
-Integrate the bip39 crate for 12-word mnemonic generation and storage to support wallet recovery.
+---
 
-Security
-Argon2id password hashing with per-user random salts
+### 📝 Transaction Notes (Optional)
 
-SHA-256 hashing for block integrity
+Add a `note` field to the `TransactionRecord` struct in `wallet.rs`, and modify the `send` command to accept an optional note.
 
-Proof-of-work consensus to prevent tampering
+---
 
-Offline JSON storage for data isolation
+### 🔐 Mnemonic Backups (Optional)
 
-For additional hardening, consider adding:
+Use the [`bip39`](https://crates.io/crates/bip39) crate for 12-word mnemonic generation for wallet recovery:
 
-CI-based cargo audit
+```toml
+bip39 = "1.2"
+```
 
-Clippy with -D warnings
+Generate mnemonic phrases and derive private keys or recovery options.
 
-Unit/integration tests
+---
 
-Contributing
-Contributions are welcome! Please fork the repository and open a pull request with:
+## 🛡️ Security
 
-Descriptive branch name (e.g., feature/qr-code)
+- Argon2id for secure password hashing (with per-user random salts)
+- SHA-256 hashing for blockchain integrity
+- Proof-of-work to prevent tampering
+- Offline JSON storage for isolation
 
-Unit tests covering new functionality
+### 🧪 Recommended Additions
 
-Updated documentation in README.md
+- Continuous Integration: `cargo audit` for dependency vulnerability checks
+- `clippy` with `-D warnings` to enforce code linting
+- Unit and integration tests for core features
 
-License
-This project is dual-licensed under MIT OR Apache-2.0. See the LICENSE file for details.
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repo
+2. Create a descriptive branch (e.g., `feature/qr-code`)
+3. Implement and test your changes
+4. Submit a pull request with:
+   - Proper description
+   - Tests (if applicable)
+   - README updates (if applicable)
+
+---
+
+
