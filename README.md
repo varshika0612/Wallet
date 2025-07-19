@@ -1,6 +1,5 @@
 Wallet CLI Application
-A simple, secure, and extensible command-line cryptocurrency wallet built in Rust.
-Implements user account management, on-disk JSON wallet storage, a basic proof-of-work blockchain, and secure password hashing with Argon2.
+A simple, secure, and extensible command-line cryptocurrency wallet built in Rust. Implements user account management, on-disk JSON wallet storage, a basic proof-of-work blockchain, and secure password hashing with Argon2.
 
 Features
 Account creation, login, and logout
@@ -15,7 +14,13 @@ JSON-based on-disk persistence per user
 
 Transaction history tracking
 
-Plug-and-play extensibility for QR code generation, BIP-39 mnemonics, notes, and more
+Plug-and-play extensibility for:
+
+QR code generation
+
+BIP-39 mnemonics
+
+Transaction notes and more
 
 Getting Started
 Prerequisites
@@ -36,17 +41,17 @@ Usage
 Invoke the wallet CLI with a subcommand and appropriate flags:
 
 bash
-./target/release/wallet <COMMAND> [OPTIONS]
+./target/release/wallet [OPTIONS]
 Common Commands
 Command	Description
-createaccount --username U	Create a new wallet user
-login --username U	Log in to an existing wallet user
+createaccount	Create a new wallet user
+login	Log in to an existing wallet user
 logout	Log out of the current session
 balance	Show current balance
-send --to R --amount N	Send N coins to recipient R
-receive --from S --amount N	Receive N coins from sender S
+send	Send N coins to recipient R
+receive	Receive N coins from sender S
 history	Display transaction history
-Examples
+Example Usage
 bash
 # Create and log in
 ./wallet createaccount --username alice
@@ -60,19 +65,19 @@ bash
 ./wallet history
 ./wallet logout
 Configuration & Extensibility
-QR Code Generation
-(Optional) Enable QR code support by adding dependencies in Cargo.toml:
+QR Code Generation (Optional)
+Enable QR code support by adding dependencies in Cargo.toml:
 
 text
 qrcode = "0.13"
-image  = "0.25"
-Add the QrCode subcommand to main.rs and call generate_qr() on your wallet instance.
+image = "0.25"
+Then add the QrCode subcommand to main.rs and call generate_qr() on your wallet instance.
 
-Transaction Notes
-(Optional) Extend the TransactionRecord struct in wallet.rs with a note field and update the send command to prompt for an optional note.
+Transaction Notes (Optional)
+Extend the TransactionRecord struct in wallet.rs with a note field. Update the send command to prompt for an optional note.
 
-Mnemonic Backups (BIP-39)
-(Optional) Integrate the bip39 crate for 12-word mnemonic generation and storage to support wallet recovery.
+Mnemonic Backups (BIP-39) (Optional)
+Integrate the bip39 crate for 12-word mnemonic generation and storage to support wallet recovery.
 
 Security
 Argon2id password hashing with per-user random salts
@@ -83,7 +88,13 @@ Proof-of-work consensus to prevent tampering
 
 Offline JSON storage for data isolation
 
-For additional hardening, consider adding CI-based cargo audit, clippy with -D warnings, and unit/integration tests.
+For additional hardening, consider adding:
+
+CI-based cargo audit
+
+Clippy with -D warnings
+
+Unit/integration tests
 
 Contributing
 Contributions are welcome! Please fork the repository and open a pull request with:
@@ -96,4 +107,3 @@ Updated documentation in README.md
 
 License
 This project is dual-licensed under MIT OR Apache-2.0. See the LICENSE file for details.
-
